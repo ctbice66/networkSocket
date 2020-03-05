@@ -7,13 +7,16 @@ import time
 #check arguments passed from the command line
 try:
 	if sys.argv[1] == "-s":
+		
 		#context and hostname for SSL
 		context = ssl.create_default_context()
-		hostname = "127.0.0.1"
+		context.load_verify_locations("cert.pem")
+		context.check_hostname = False
 		
 		#create first socket and wrap in SSL context
 		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s_1:
-			with context.wrap_socket(s_1, server_hostname=hostname) as secure_s_1:
+			with context.wrap_socket(s_1, server_hostname="127.0.0.1") as secure_s_1:
+				
 				#connect and send BlazerID to server
 				secure_s_1.connect(("127.0.0.1", 27994))
 				secure_s_1.send(bytes("ctbice66", "utf-8"))
