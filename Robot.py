@@ -27,7 +27,6 @@ s_4_port = randomPort()
 try:
 	if sys.argv[1] == "-s":
 		
-		
 		#create context for SSL and initialize certificate chain
 		context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 		context.load_cert_chain('cert.pem')
@@ -91,7 +90,7 @@ try:
 
 except IndexError:
 
-	#create first socket and listen for a connection from client
+		#create first socket and listen for a connection from client
 		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s_1:
 			s_1.bind(("127.0.0.1", 3310))
 			print("ROBOT IS STARTED")
