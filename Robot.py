@@ -19,6 +19,7 @@ try:
 			s_1.bind(("127.0.0.1", 27994))
 			print("ROBOT IS STARTED with SSL")
 			s_1.listen()
+			print("Listening on port 27994")
 			
 			#wrap first socket with an SSL context
 			with context.wrap_socket(s_1, server_side=True) as secure_s_1:
@@ -33,25 +34,27 @@ try:
 			with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s_2:
 				s_2.connect(("127.0.0.1", 12345))
 				s_2.send(bytes("23456,65432.", "utf-8"))
-
-			#create third socket, bind, then connect
+			
+			#create third socket - UDP, then bind
 			with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s_3:
 				s_3.bind(("127.0.0.1", 23456))
-				s_3.connect(("127.0.0.1", 65432))
 				
 				#translate random number received from client into a string
 				random_int = int.from_bytes(s_3.recv(1024), byteorder="big")*10
 				random_char_string = str(random.choices(char_set, k=random_int))
 				
+				#create fourth socket - UDP, then connect to Client
+				s_4 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+				s_4.connect(("127.0.0.1", 65432))
+				
 				#for 5 iterations, wait 1 second, then send char string to client
 				for i in range(5):
 					time.sleep(1.0)
-					s_3.send(bytes(random_char_string, "utf-8"))
-					client_response = str(s_3.recv(1024), "utf-8")
+					s_4.send(bytes(random_char_string, "utf-8"))
 					
 					#if the client responds with a matching string, break from loop
-					if (random_char_string == client_response):
-						s_3.send(bytes("success", "utf-8"))
+					if (random_char_string == str(s_3.recv(1024), "utf-8")):
+						s_4.send(bytes("success", "utf-8"))
 						print("success")
 						break
 
@@ -65,6 +68,7 @@ except IndexError:
 			s_1.bind(("127.0.0.1", 3310))
 			print("ROBOT IS STARTED")
 			s_1.listen()
+			print("Listening on port 3310")
 			connection, address = s_1.accept()
 			
 			#when client connects, print BlazerID then send a port number to client
@@ -78,23 +82,25 @@ except IndexError:
 			s_2.connect(("127.0.0.1", 12345))
 			s_2.send(bytes("23456,65432.", "utf-8"))
 
-		#create third socket, bind, then connect
+		#create third socket - UDP, then bind
 		with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s_3:
 			s_3.bind(("127.0.0.1", 23456))
-			s_3.connect(("127.0.0.1", 65432))
 			
 			#translate random number received from client into a string
 			random_int = int.from_bytes(s_3.recv(1024), byteorder="big")*10
 			random_char_string = str(random.choices(char_set, k=random_int))
 			
+			#create fourth socket - UDP, then connect to Client
+			s_4 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+			s_4.connect(("127.0.0.1", 65432))
+			
 			#for 5 iterations, wait 1 second, then send char string to client
 			for i in range(5):
 				time.sleep(1.0)
-				s_3.send(bytes(random_char_string, "utf-8"))
-				client_response = str(s_3.recv(1024), "utf-8")
+				s_4.send(bytes(random_char_string, "utf-8"))
 				
 				#if the client responds with a matching string, break from loop
-				if (random_char_string == client_response):
-					s_3.send(bytes("success", "utf-8"))
+				if (random_char_string == str(s_3.recv(1024), "utf-8")):
+					s_4.send(bytes("success", "utf-8"))
 					print("success")
 					break
