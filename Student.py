@@ -5,7 +5,7 @@ import sys
 import time
 
 #check for arguments passed to client
-try:
+if (len(sys.argv) > 1):
 	if sys.argv[1] == "-s":
 		
 		#context and hostname for SSL
@@ -23,8 +23,9 @@ try:
 				secure_s_1.send(bytes("ctbice66", "utf-8"))
 				print("Sending BlazerID to server on port 27994")
 				
-				#create second socket, bind and listen for connection from server
+				#create second socket, bind and listen for connection from server; set 5 second timeout on socket
 				with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s_2:
+					s_2.settimeout(5.0)
 					
 					#remove comment to work with instructor-provided ROBOT executable
 					#s_2_port = int(s_1.recv(1024).decode("utf-8"))
@@ -38,6 +39,9 @@ try:
 					#when server connects, extract ports
 					with connection:
 						
+						#close first socket
+						secure_s_1.close()
+						
 						#remove comment to work with instructor-provided ROBOT executable
 						#ports = connection.recv(1024).decode("utf-8").split(",")
 						#server_port = int(ports[0])
@@ -47,34 +51,44 @@ try:
 						server_port = int(ports[0])
 						client_port = int(ports[1].split(".")[0])
 						
-						#create third socket - UDP, bind to port selected by server
-						with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s_3:
-							s_3.bind(("127.0.0.1", client_port))
+						#close second socket
+						s_2.close()
+						
+						#create third socket - UDP
+						s_3 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+						
+						#bind UDP socket to client port, set 5 second timeout
+						s_3.bind(("127.0.0.1", client_port))
+						s_3.settimeout(5.0)
+						
+						#connect to server via UDP
+						s_3.connect(("127.0.0.1", server_port))
+						print("Connected to server on port {}".format(server_port))
+						
+						#wait for 1 second, then send random int to server
+						time.sleep(1.0)
+						s_3.send(bytes(random.randint(6, 9).to_bytes(10, byteorder="big")))
+						print("Sent random integer to server on port {}".format(server_port))
+						
+						#send random characters received as a response back to server five times; once per second
+						for i in range(5):
+							time.sleep(1.0)
+							s_3.send(s_3.recv(1024))
+							print("Sending random string of characters back to server on {}".format(server_port))
 							
-							#create fourth socket - UDP, connect to Server
-							s_4 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-							s_4.connect(("127.0.0.1", server_port))
-							print("Connected to server on port {}".format(server_port))
-							
-							#send random int to server
-							s_4.send(bytes(random.randint(6, 9).to_bytes(10, byteorder="big")))
-							print("Sending random integer to server on port {}".format(server_port))
-							
-							#send random characters received back as a response back to server five times; once per second
-							for i in range(5):
-								time.sleep(1.0)
-								s_4.send(s_3.recv(1024))
-								print("Sending random string of characters back to server on {}".format(server_port))
+							#if server responds with success message, break from loop
+							if (str(s_3.recv(1024), "utf-8") == "success"):
+								print("Server confirmed matching character string")
 								
-								#if server responds with success message, break from loop
-								if (str(s_3.recv(1024), "utf-8") == "success"):
-									print("Server confirmed matching character string")
-									break
+								#close third socket
+								s_3.close()
+								
+								break
 	else:
 		print("Invalid argument, please use '-s' to connect via SSL")
 
 #user did not provide any arguments
-except IndexError:
+else:
 	
 	#create first socket, connect and send BlazerID to server
 	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s_1:
@@ -83,8 +97,9 @@ except IndexError:
 		s_1.send(bytes("ctbice66", "utf-8"))
 		print("Sending BlazerID to server on port 3310")
 		
-		#create second socket, bind and listen for connection from server
+		#create second socket, bind and listen for connection from server; set 5 second timeout on socket
 		with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s_2:
+			s_2.settimeout(5.0)
 			
 			#remove comment to work with instructor-provided ROBOT executable
 			#s_2_port = int(s_1.recv(1024).decode("utf-8"))
@@ -98,6 +113,8 @@ except IndexError:
 			#when server connects, extract ports
 			with connection:
 				
+				#close first socket
+				s_1.close()
 				#remove comment to work with instructor-provided ROBOT executable
 				#ports = connection.recv(1024).decode("utf-8").split(",")
 				#server_port = int(ports[0])
@@ -107,26 +124,36 @@ except IndexError:
 				server_port = int(ports[0])
 				client_port = int(ports[1].split(".")[0])
 				
-				#create third socket - UDP, bind to port selected by server
-				with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s_3:
-					s_3.bind(("127.0.0.1", client_port))
+				#close second socket
+				s_2.close()
+				
+				#create third socket - UDP
+				s_3 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+				
+				#bind UDP socket to client port, set 5 second timeout
+				s_3.bind(("127.0.0.1", client_port))
+				s_3.settimeout(5.0)
+				
+				#connect to server via UDP
+				s_3.connect(("127.0.0.1", server_port))
+				print("Connected to server on port {}".format(server_port))
+				
+				#wait for 1 second, then send random int to server
+				time.sleep(1.0)
+				s_3.send(bytes(random.randint(6, 9).to_bytes(10, byteorder="big")))
+				print("Sent random integer to server on port {}".format(server_port))
+				
+				#send random characters received as a response back to server five times; once per second
+				for i in range(5):
+					time.sleep(1.0)
+					s_3.send(s_3.recv(1024))
+					print("Sending random string of characters back to server on {}".format(server_port))
 					
-					#create fourth socket - UDP, connect to Server
-					s_4 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-					s_4.connect(("127.0.0.1", server_port))
-					print("Connected to server on port {}".format(server_port))
-					
-					#send random int to server
-					s_4.send(bytes(random.randint(6, 9).to_bytes(10, byteorder="big")))
-					print("Sending random integer to server on port {}".format(server_port))
-					
-					#send random characters received as a response back to server five times; once per second
-					for i in range(5):
-						time.sleep(1.0)
-						s_4.send(s_3.recv(1024))
-						print("Sending random string of characters back to server on {}".format(server_port))
+					#if server responds with success message, break from loop
+					if (str(s_3.recv(1024), "utf-8") == "success"):
+						print("Server confirmed matching character string")
 						
-						#if server responds with success message, break from loop
-						if (str(s_3.recv(1024), "utf-8") == "success"):
-							print("Server confirmed matching character string")
-							break
+						#close third socket
+						s_3.close()
+						
+						break
