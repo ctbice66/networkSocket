@@ -142,6 +142,7 @@ def main():
 	client_port = getRandomPort(usedPorts)
 	
 	if (len(sys.argv) > 1):
+		#check for correct parameter
 		if sys.argv[1] == "-s":
 			#start message
 			print("ROBOT IS STARTED with SSL")
@@ -163,4 +164,5 @@ def main():
 		
 		thirdSocket_Robot(address, server_port, client_port, char_set)
 		
+#start program
 main()

@@ -112,9 +112,12 @@ def thirdSocket_client(address, server_port, client_port):
 			
 			break
 def main():
+	#IP address to use
 	address = "127.0.0.1"
+	
 	#check for arguments passed to client
 	if (len(sys.argv) > 1):
+		#check for correct parameter
 		if sys.argv[1] == "-s":
 			
 			#start message
@@ -127,7 +130,7 @@ def main():
 			thirdSocket_client(address, server_port, client_port)
 			
 		else:
-			print("Invalid argument, please use '-s' to connect via SSL")
+			print("Use the -s parameter for SSL")
 
 	#user did not provide any arguments
 	else:
@@ -140,4 +143,5 @@ def main():
 		server_port, client_port = secondSocket_client(address, socket_2_port, False)
 		
 		thirdSocket_client(address, server_port, client_port)
+#start program
 main()
