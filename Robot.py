@@ -38,7 +38,6 @@ def getSocket(address, port, TCP, bind, connect, secure, secureServer, timeout):
 		
 		#wrap new socket with SSL context
 		newSocket = context.wrap_socket(newSocket, server_side=True)
-		
 	elif secure == True and secureServer == False:
 		#context and hostname for SSL
 		context = ssl.create_default_context()
@@ -47,7 +46,6 @@ def getSocket(address, port, TCP, bind, connect, secure, secureServer, timeout):
 		
 		#wrap new socket with SSL context
 		newSocket = context.wrap_socket(newSocket, server_hostname=address)
-		
 	
 	#give socket a timeout
 	if timeout > 0:
