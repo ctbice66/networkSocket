@@ -55,11 +55,11 @@ def firstSocket_client(address, socket_1_port, ssl):
 	if ssl == True:
 		print("Verified server using certificate: {}".format(socket_1.getpeercert()))
 	
-	socket_1.send(bytes("ctbice66", "utf-8"))
+	socket_1.send("ctbice66".encode())
 	print("Sending BlazerID to server on port 27994")
 	
 	#get socket 2 port from server
-	socket_2_port = int.from_bytes(socket_1.recv(1024), byteorder="big")
+	socket_2_port = int(socket_1.recv(1024).decode())
 	socket_1.close()
 	
 	return socket_2_port
@@ -75,7 +75,7 @@ def secondSocket_client(address, socket_2_port, ssl):
 	connection, address = socket_2.accept()
 	
 	#when server connects, extract ports
-	ports = str(connection.recv(1024), "utf-8").split(",")
+	ports = connection.recv(1024).decode().split(",")
 	server_port = int(ports[0])
 	client_port = int(ports[1].split(".")[0])
 	
@@ -94,7 +94,7 @@ def thirdSocket_client(address, server_port, client_port):
 	
 	#wait for 1 second, then send random int to server
 	time.sleep(1.0)
-	socket_3.send(bytes(random.randint(6, 9).to_bytes(10, byteorder="big")))
+	socket_3.send(str(random.randint(6, 9)).encode())
 	print("Sent random integer to server on port {}".format(server_port))
 	
 	#send random characters received as a response back to server five times; once per second
@@ -104,7 +104,7 @@ def thirdSocket_client(address, server_port, client_port):
 		print("Sending random string of characters back to server on {}".format(server_port))
 		
 		#if server responds with success message, break from loop
-		if (str(socket_3.recv(1024), "utf-8") == "success"):
+		if (socket_3.recv(1024).decode() == "success"):
 			print("Server confirmed matching character string")
 			
 			#close third socket

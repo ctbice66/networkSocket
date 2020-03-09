@@ -68,8 +68,8 @@ def firstSocket_Robot(address, socket_1_port, socket_2_port, ssl):
 	
 	#when client connects, print BlazerID then send a port number to client
 	print("Connection to port {} successful".format(socket_1_port))
-	print(str(connection.recv(1024), "utf-8"))
-	connection.sendall((socket_2_port).to_bytes(10, byteorder="big"))
+	print(connection.recv(1024).decode())
+	connection.sendall(str(socket_2_port).encode())
 	
 	#close first socket
 	socket_1.close()
@@ -83,7 +83,7 @@ def secondSocket_Robot(address, socket_2_port, server_port, client_port, ssl):
 		print("Verified server using certificate: {}".format(socket_2.getpeercert()))
 	
 	#send ports selected at random to client via second socket
-	socket_2.send(bytes(str(server_port) + "," + str(client_port) + ".", "utf-8"))
+	socket_2.send((str(server_port) + "," + str(client_port) + ".").encode())
 	print("Sending server port {} and client port {}".format(server_port, client_port))
 	
 	#close second socket
@@ -95,7 +95,7 @@ def thirdSocket_Robot(address, server_port, client_port, char_set):
 	print("Waiting for random int from client on port {}".format(server_port))
 	
 	#receive random int value from client, multiply by 10 to generate size of random character string
-	random_int = int.from_bytes(socket_3.recv(1024), byteorder="big")
+	random_int = int(socket_3.recv(1024).decode())
 	random_string_size = random_int * 10
 	print("Received random int from client on port {}".format(server_port))
 	
@@ -110,12 +110,13 @@ def thirdSocket_Robot(address, server_port, client_port, char_set):
 	#for 5 iterations, wait 1 second, then send random character string to client
 	for i in range(5):
 		time.sleep(1.0)
-		socket_3.send(bytes(random_char_string, "utf-8"))
+		socket_3.send(random_char_string.encode())
 		print("Sending random character string to client on port {}".format(client_port))
 		
 		#if the client responds with a matching string, break from loop
-		if (random_char_string == str(socket_3.recv(1024), "utf-8")):
-			socket_3.send(bytes("success", "utf-8"))
+		if random_char_string == socket_3.recv(1024).decode():
+			#send success message to client
+			socket_3.send("success".encode())
 			print("Client has responded with a matching string")
 			
 			#close third socket
