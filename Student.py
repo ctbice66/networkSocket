@@ -4,155 +4,142 @@ import ssl
 import sys
 import time
 
-#check for arguments passed to client
-if (len(sys.argv) > 1):
-	if sys.argv[1] == "-s":
+def getSocket(address, port, TCP, bind, connect, secure, secureServer, timeout):
+	#create new TCP or UDP socket
+	if TCP == True:
+		newSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	elif TCP == False:
+		newSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		
+	#bind and listen for TCP socket or just bind for UDP
+	if bind and TCP == True:
+		newSocket.bind((address, port))
+		newSocket.listen()
+	elif bind and TCP == False:
+		newSocket.bind((address, port))
+		
+	#upgrade new socket to SSL socket
+	if secure == True and secureServer == True:
+		#create context for SSL and initialize certificate chain
+		context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+		context.load_cert_chain('cert.pem')
+		
+		#wrap new socket with SSL context
+		newSocket = context.wrap_socket(newSocket, server_side=True)
+		
+	elif secure == True and secureServer == False:
 		#context and hostname for SSL
 		context = ssl.create_default_context()
 		context.load_verify_locations("cert.pem")
 		context.check_hostname = False
 		
-		#create first socket and wrap in SSL context
-		s_1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		secure_s_1 = context.wrap_socket(s_1, server_hostname="127.0.0.1")
+		#wrap new socket with SSL context
+		newSocket = context.wrap_socket(newSocket, server_hostname=address)
 		
-		#connect and send BlazerID to server
-		secure_s_1.connect(("127.0.0.1", 27994))
-		print("Verified server using certificate: {}".format(secure_s_1.getpeercert()))
-		print("Connected to server on port 27994")
-		secure_s_1.send(bytes("ctbice66", "utf-8"))
-		print("Sending BlazerID to server on port 27994")
+	
+	#give socket a timeout
+	if timeout > 0:
+		newSocket.settimeout(timeout)
+	
+	#connect via new socket
+	if connect == True:
+		newSocket.connect((address, port))
 		
-		#create second socket, bind and listen for connection from server; set 5 second timeout on socket
-		s_2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		s_2.settimeout(5.0)
-		
-		#remove comment to work with instructor-provided ROBOT executable
-		#s_2_port = int(s_1.recv(1024).decode("utf-8"))
-		
-		s_2_port = int.from_bytes(secure_s_1.recv(1024), byteorder="big")
-		s_2.bind(("127.0.0.1", s_2_port))
-		s_2.listen()
-		print("Listening on port {}".format(s_2_port))
-		connection, address = s_2.accept()
-		
-		#close first socket
-		secure_s_1.close()
-		
-		#remove comment to work with instructor-provided ROBOT executable
-		#ports = connection.recv(1024).decode("utf-8").split(",")
-		#server_port = int(ports[0])
-		#client_port = int(ports[1])
-		
-		#when server connects, extract ports
-		ports = str(connection.recv(1024), "utf-8").split(",")
-		server_port = int(ports[0])
-		client_port = int(ports[1].split(".")[0])
-		
-		#close second socket
-		s_2.close()
-		
-		#create third socket - UDP
-		s_3 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		
-		#bind UDP socket to client port, set 5 second timeout
-		s_3.bind(("127.0.0.1", client_port))
-		s_3.settimeout(5.0)
-		
-		#connect to server via UDP
-		s_3.connect(("127.0.0.1", server_port))
-		print("Connected to server on port {}".format(server_port))
-		
-		#wait for 1 second, then send random int to server
-		time.sleep(1.0)
-		s_3.send(bytes(random.randint(6, 9).to_bytes(10, byteorder="big")))
-		print("Sent random integer to server on port {}".format(server_port))
-		
-		#send random characters received as a response back to server five times; once per second
-		for i in range(5):
-			time.sleep(1.0)
-			s_3.send(s_3.recv(1024))
-			print("Sending random string of characters back to server on {}".format(server_port))
-			
-			#if server responds with success message, break from loop
-			if (str(s_3.recv(1024), "utf-8") == "success"):
-				print("Server confirmed matching character string")
-				
-				#close third socket
-				s_3.close()
-				
-				break
-	else:
-		print("Invalid argument, please use '-s' to connect via SSL")
+	
+	return newSocket
 
-#user did not provide any arguments
-else:
+def firstSocket_client(address, socket_1_port, ssl):
+	#create first socket and wrap in SSL context
+	socket_1 = getSocket(address, socket_1_port, True, False, True, ssl, False, 5.0)
 	
-	#create first socket, connect and send BlazerID to server
-	s_1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s_1.connect(("127.0.0.1", 3310))
-	print("Connected to server on port 3310")
-	s_1.send(bytes("ctbice66", "utf-8"))
-	print("Sending BlazerID to server on port 3310")
+	#connection successful
+	print("Connected to server on port 27994")
+	if ssl == True:
+		print("Verified server using certificate: {}".format(socket_1.getpeercert()))
 	
+	socket_1.send(bytes("ctbice66", "utf-8"))
+	print("Sending BlazerID to server on port 27994")
+	
+	#get socket 2 port from server
+	socket_2_port = int.from_bytes(socket_1.recv(1024), byteorder="big")
+	socket_1.close()
+	
+	return socket_2_port
+
+def secondSocket_client(address, socket_2_port, ssl):
 	#create second socket, bind and listen for connection from server; set 5 second timeout on socket
-	s_2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s_2.settimeout(5.0)
+	socket_2 = getSocket(address, socket_2_port, True, True, False, ssl, True, 5.0)
 	
 	#remove comment to work with instructor-provided ROBOT executable
 	#s_2_port = int(s_1.recv(1024).decode("utf-8"))
 	
-	s_2_port = int.from_bytes(s_1.recv(1024), byteorder="big")
-	s_2.bind(("127.0.0.1", s_2_port))
-	s_2.listen()
-	print("Listening on port {}".format(s_2_port))
-	connection, address = s_2.accept()
+	#wait for server connection
+	connection, address = socket_2.accept()
 	
 	#when server connects, extract ports
-	#if connection:
-	
-	#close first socket
-	s_1.close()
-	#remove comment to work with instructor-provided ROBOT executable
-	#ports = connection.recv(1024).decode("utf-8").split(",")
-	#server_port = int(ports[0])
-	#client_port = int(ports[1])
-	
 	ports = str(connection.recv(1024), "utf-8").split(",")
 	server_port = int(ports[0])
 	client_port = int(ports[1].split(".")[0])
 	
 	#close second socket
-	s_2.close()
+	socket_2.close()
 	
+	return server_port, client_port
+
+def thirdSocket_client(address, server_port, client_port):
 	#create third socket - UDP
-	s_3 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	
-	#bind UDP socket to client port, set 5 second timeout
-	s_3.bind(("127.0.0.1", client_port))
-	s_3.settimeout(5.0)
+	socket_3 = getSocket(address, client_port, False, True, False, False, False, 5.0)
 	
 	#connect to server via UDP
-	s_3.connect(("127.0.0.1", server_port))
+	socket_3.connect((address, server_port))
 	print("Connected to server on port {}".format(server_port))
 	
 	#wait for 1 second, then send random int to server
 	time.sleep(1.0)
-	s_3.send(bytes(random.randint(6, 9).to_bytes(10, byteorder="big")))
+	socket_3.send(bytes(random.randint(6, 9).to_bytes(10, byteorder="big")))
 	print("Sent random integer to server on port {}".format(server_port))
 	
 	#send random characters received as a response back to server five times; once per second
 	for i in range(5):
 		time.sleep(1.0)
-		s_3.send(s_3.recv(1024))
+		socket_3.send(socket_3.recv(1024))
 		print("Sending random string of characters back to server on {}".format(server_port))
 		
 		#if server responds with success message, break from loop
-		if (str(s_3.recv(1024), "utf-8") == "success"):
+		if (str(socket_3.recv(1024), "utf-8") == "success"):
 			print("Server confirmed matching character string")
 			
 			#close third socket
-			s_3.close()
+			socket_3.close()
 			
 			break
+def main():
+	address = "127.0.0.1"
+	#check for arguments passed to client
+	if (len(sys.argv) > 1):
+		if sys.argv[1] == "-s":
+			
+			#start message
+			print('STUDENT IS STARTED with SSL')
+			
+			socket_2_port = firstSocket_client(address, 27994, True)
+			
+			server_port, client_port = secondSocket_client(address, socket_2_port, True)
+			
+			thirdSocket_client(address, server_port, client_port)
+			
+		else:
+			print("Invalid argument, please use '-s' to connect via SSL")
+
+	#user did not provide any arguments
+	else:
+		
+		#start message
+		print('STUDENT IS STARTED without SSL')
+		
+		socket_2_port = firstSocket_client(address, 3310, False)
+		
+		server_port, client_port = secondSocket_client(address, socket_2_port, False)
+		
+		thirdSocket_client(address, server_port, client_port)
+main()
